@@ -90,7 +90,12 @@ export default class Form extends React.Component {
       return;
     }
 
-    this.props.onSubmit(this.model.getData(), this.onSubmitSuccess, this.onSubmitError);
+    this.props.onSubmit(
+      this.model.getData(),
+      this.onSubmitSuccess,
+      this.onSubmitError,
+      e
+    );
   };
 
   onSubmitSuccess = data => {

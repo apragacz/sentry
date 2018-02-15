@@ -391,23 +391,54 @@ exports[`projectGeneralSettings renders 1`] = `
           </h3>
         </div>
         <div
-          className="box-content with-padding"
+          className="box-content"
         >
-          <p>
-            <a
-              className="btn btn-danger pull-right"
-              href="/org-slug/project-slug/settings/remove/"
+          <PanelFormFieldItem
+            help="Careful, this action cannot be undone."
+            inline={true}
+            label={
+              <span>
+                <span>
+                  Remove the 
+                </span>
+                <strong>
+                  project-slug
+                </strong>
+                <span>
+                   project and all related data.
+                </span>
+              </span>
+            }
+          >
+            <Confirm
+              cancelText="Cancel"
+              confirmText="Remove project"
+              message={
+                <div>
+                  <TextBlock>
+                    <strong>
+                      Removing this project is permanent and cannot be undone!
+                    </strong>
+                  </TextBlock>
+                  <TextBlock>
+                    This will also remove all associated event data.
+                  </TextBlock>
+                </div>
+              }
+              onConfirm={[Function]}
+              priority="danger"
+              title="Remove project?"
             >
-              Remove Project
-            </a>
-            Remove the 
-            <strong>
-              project-slug
-            </strong>
-             project and all related data.
-            <br />
-            Careful, this action cannot be undone.
-          </p>
+              <Button
+                className="ref-remove-project"
+                disabled={false}
+                priority="danger"
+                type="button"
+              >
+                Remove Project
+              </Button>
+            </Confirm>
+          </PanelFormFieldItem>
         </div>
       </div>
       <div
@@ -421,23 +452,43 @@ exports[`projectGeneralSettings renders 1`] = `
           </h3>
         </div>
         <div
-          className="box-content with-padding"
+          className="box-content"
         >
-          <p>
-            <a
-              className="btn btn-danger pull-right"
-              href="/org-slug/project-slug/settings/transfer/"
+          <PanelFormFieldItem
+            help="Careful, this action cannot be undone."
+            inline={true}
+            label={
+              <span>
+                <span>
+                  Transfer the 
+                </span>
+                <strong>
+                  project-slug
+                </strong>
+                <span>
+                   project and all related data.
+                </span>
+              </span>
+            }
+          >
+            <Confirm
+              cancelText="Cancel"
+              confirmText="Transfer project"
+              onConfirm={[Function]}
+              priority="danger"
+              renderMessage={[Function]}
+              title="Transfer project?"
             >
-              Transfer Project
-            </a>
-            Transfer the 
-            <strong>
-              project-slug
-            </strong>
-             project and all related data.
-            <br />
-            Careful, this action cannot be undone.
-          </p>
+              <Button
+                className="ref-transfer-project"
+                disabled={false}
+                priority="danger"
+                type="button"
+              >
+                Transfer Project
+              </Button>
+            </Confirm>
+          </PanelFormFieldItem>
         </div>
       </div>
     </ApiForm>

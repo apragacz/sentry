@@ -10,11 +10,20 @@ import {
   TextField,
 } from '../components/forms';
 import {getOrganizationState} from '../mixins/organizationState';
+import {removeProject, transferProject} from '../actionCreators/projects';
 import {t, tct} from '../locale';
 import AsyncView from './asyncView';
+import Button from '../components/buttons/button';
+import Confirm from '../components/confirm';
 import DynamicWrapper from '../components/dynamicWrapper';
+import Form from './settings/components/forms/form';
 import IndicatorStore from '../stores/indicatorStore';
+import NewTextField from './settings/components/forms/textField';
+import Panel from './settings/components/panel';
+import PanelHeader from './settings/components/panelHeader';
+import PanelFormFieldItem from './settings/components/panelFormFieldItem';
 import SettingsPageHeader from './settings/components/settingsPageHeader';
+import TextBlock from './settings/components/text/textBlock';
 
 class ListAsTextareaField extends TextareaField {
   getValue(props, context) {
@@ -32,9 +41,14 @@ export default class ProjectGeneralSettings extends AsyncView {
     organization: PropTypes.object.isRequired,
   };
 
-  getEndpoint() {
+  constructor(...args) {
+    super(...args);
+    this._form = {};
+  }
+
+  getEndpoints() {
     let {orgId, projectId} = this.props.params;
-    return `/projects/${orgId}/${projectId}/`;
+    return [['data', `/projects/${orgId}/${projectId}/`]];
   }
 
   getTeamChoices() {
@@ -74,9 +88,33 @@ export default class ProjectGeneralSettings extends AsyncView {
     return val + ' hour' + (val != 1 ? 's' : '');
   }
 
-  renderRemoveProject() {
-    let {orgId, projectId} = this.props.params;
+  handleTransferFieldChange = (id, value) => {
+    this._form[id] = value;
+  };
 
+  handleRemoveProject = () => {
+    let {orgId} = this.props.params;
+    let project = this.state.data;
+    if (!project) return;
+
+    removeProject(this.api, orgId, project).then(() => {
+      // Need to hard reload because lots of components do not listen to Projects Store
+      window.location.assign('/');
+    });
+  };
+
+  handleTransferProject = () => {
+    let {orgId} = this.props.params;
+    let project = this.state.data;
+    if (!project) return;
+    if (!this._form.email) return;
+
+    transferProject(this.api, orgId, project, this._form.email).then(() => {
+      // Need to hard reload because lots of components do not listen to Projects Store
+      window.location.assign('/');
+    });
+  };
+  renderRemoveProject() {
     let project = this.state.data;
 
     let isProjectAdmin = getOrganizationState(this.context.organization)
@@ -97,24 +135,40 @@ export default class ProjectGeneralSettings extends AsyncView {
       );
     } else {
       return (
-        <p>
-          <a
-            href={`/${orgId}/${projectId}/settings/remove/`}
-            className="btn btn-danger pull-right"
+        <PanelFormFieldItem
+          label={tct('Remove the [project] project and all related data.', {
+            project: <strong>{project.slug}</strong>,
+          })}
+          help={t('Careful, this action cannot be undone.')}
+        >
+          <Confirm
+            onConfirm={this.handleRemoveProject}
+            priority="danger"
+            title={t('Remove project?')}
+            confirmText={t('Remove project')}
+            message={
+              <div>
+                <TextBlock>
+                  <strong>
+                    {t('Removing this project is permanent and cannot be undone!')}
+                  </strong>
+                </TextBlock>
+                <TextBlock>
+                  {t('This will also remove all associated event data.')}
+                </TextBlock>
+              </div>
+            }
           >
-            {t('Remove Project')}
-          </a>
-          Remove the <strong>{project.slug}</strong> project and all related data.
-          <br />
-          Careful, this action cannot be undone.
-        </p>
+            <Button className="ref-remove-project" type="button" priority="danger">
+              {t('Remove Project')}
+            </Button>
+          </Confirm>
+        </PanelFormFieldItem>
       );
     }
   }
 
   renderTransferProject() {
-    let {orgId, projectId} = this.props.params;
-
     let project = this.state.data;
     let isProjectAdmin = getOrganizationState(this.context.organization)
       .getAccess()
@@ -134,17 +188,61 @@ export default class ProjectGeneralSettings extends AsyncView {
       );
     } else {
       return (
-        <p>
-          <a
-            href={`/${orgId}/${projectId}/settings/transfer/`}
-            className="btn btn-danger pull-right"
+        <PanelFormFieldItem
+          label={tct('Transfer the [project] project and all related data.', {
+            project: <strong>{project.slug}</strong>,
+          })}
+          help={t('Careful, this action cannot be undone.')}
+        >
+          <Confirm
+            onConfirm={this.handleTransferProject}
+            priority="danger"
+            title={`${t('Transfer project')}?`}
+            confirmText={t('Transfer project')}
+            renderMessage={({doConfirm, doClose}) => (
+              <div>
+                <TextBlock>
+                  <strong>
+                    {t('Transferring this project is permanent and cannot be undone!')}
+                  </strong>
+                </TextBlock>
+                <TextBlock>
+                  {t(
+                    'Please enter the owner of the organization you would like to transfer this project to.'
+                  )}
+                </TextBlock>
+                <Panel>
+                  <PanelHeader>{t('Transfer to')}</PanelHeader>
+                  <Form
+                    hideFooter
+                    onFieldChange={this.handleTransferFieldChange}
+                    onSubmit={(data, onSuccess, onError, e) => {
+                      e.stopPropagation();
+                      doConfirm();
+                    }}
+                  >
+                    <NewTextField
+                      name="email"
+                      label={t('Organization Owner')}
+                      placeholder="admin@example.com"
+                      required
+                      help={tct(
+                        'A request will be emailed to the new owner in order to transfer [project] to a new organization.',
+                        {
+                          project: <strong> {project.slug} </strong>,
+                        }
+                      )}
+                    />
+                  </Form>
+                </Panel>
+              </div>
+            )}
           >
-            {t('Transfer Project')}
-          </a>
-          Transfer the <strong>{project.slug}</strong> project and all related data.
-          <br />
-          Careful, this action cannot be undone.
-        </p>
+            <Button className="ref-transfer-project" type="button" priority="danger">
+              {t('Transfer Project')}
+            </Button>
+          </Confirm>
+        </PanelFormFieldItem>
       );
     }
   }
@@ -193,7 +291,7 @@ export default class ProjectGeneralSettings extends AsyncView {
         <ApiForm
           initialData={initialData}
           apiMethod="PUT"
-          apiEndpoint={this.getEndpoint()}
+          apiEndpoint={this.getEndpoints()[0][1]}
           onSubmitSuccess={resp => {
             IndicatorStore.add(t('Your changes were saved'), 'success', {duration: 2000});
             // Reload if slug has changed
@@ -404,13 +502,13 @@ export default class ProjectGeneralSettings extends AsyncView {
             <div className="box-header">
               <h3>{t('Remove Project')}</h3>
             </div>
-            <div className="box-content with-padding">{this.renderRemoveProject()}</div>
+            <div className="box-content">{this.renderRemoveProject()}</div>
           </div>
           <div className="box">
             <div className="box-header">
               <h3>{t('Transfer Project')}</h3>
             </div>
-            <div className="box-content with-padding">{this.renderTransferProject()}</div>
+            <div className="box-content">{this.renderTransferProject()}</div>
           </div>
         </ApiForm>
       </div>
