@@ -142,7 +142,7 @@ class Migration(SchemaMigration):
         db.delete_table('sentry_message')
 
         # Deleting model 'User'
-        db.delete_table('sentry_user')
+        db.delete_table('auth_user')
 
     models = {
         u'auth.group': {

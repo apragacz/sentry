@@ -21,7 +21,7 @@ def _upgrade(interactive, traceback, verbosity, repair):
     )
 
     dj_call_command(
-        'migrate',
+        'south_migrate',
         merge=True,
         ignore_ghost_migrations=True,
         interactive=interactive,

@@ -1,10 +1,12 @@
+import six
 import sys
-from collections import deque
 
+from collections import deque
 from django.utils.datastructures import SortedDict
 from django.db import models
 
 from south import exceptions
+from south.constants import DJANGO_17
 
 
 class SortedSet(SortedDict):
@@ -24,12 +26,33 @@ class SortedSet(SortedDict):
         [self.add(k) for k in iterable]
 
 
-def get_app_label(app):
+def get_app_label(models_module):
     """
-    Returns the _internal_ app label for the given app module.
-    i.e. for <module django.contrib.auth.models> will return 'auth'
+    Works out the app label from either the app label, the app name, or the module
+
+    For example, this will convert:
+
+    >>> <module 'sentry_plugins.hipchat_ac.models'>
+
+    into:
+
+    >>> 'sentry_plugins.hipchat_ac'
     """
-    return app.__name__.split('.')[-2]
+    if isinstance(models_module, six.string_types):
+        if DJANGO_17:
+            return '.'.join(models_module.split('.')[:-1])
+        return models_module.split('.')[-2]
+    if DJANGO_17:
+        return '.'.join(models_module.__name__.split('.')[:-1])
+    return models_module.__name__.split('.')[-2]
+
+
+# def get_app_label(app):
+#     """
+#     Returns the _internal_ app label for the given app module.
+#     i.e. for <module django.contrib.auth.models> will return 'auth'
+#     """
+#     return app.__name__.split('.')[-2]
 
 
 def app_label_to_app_module(app_label):

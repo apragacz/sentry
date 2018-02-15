@@ -240,9 +240,17 @@ class HashDiscarded(Exception):
     pass
 
 
-class ScoreClause(object):
-    def __init__(self, group):
+# XXX(dramer): compatibility hack for Django 1.7
+try:
+    from django.db.models.expressions import ExpressionNode
+except ImportError:
+    ExpressionNode = object
+
+
+class ScoreClause(ExpressionNode):
+    def __init__(self, group, *args, **kwargs):
         self.group = group
+        super(ScoreClause, self).__init__(*args, **kwargs)
 
     def __int__(self):
         # Calculate the score manually when coercing to an int.

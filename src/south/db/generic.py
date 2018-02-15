@@ -1090,9 +1090,14 @@ class DatabaseOperations(object):
 
         created_models = []
         for model_name in model_names:
-            model = models.get_model(app_label, model_name)
-            if model:
-                created_models.append(model)
+            try:
+                model = models.get_model(app_label, model_name)
+            # Django 1.7 throws LookupError
+            except LookupError:
+                pass
+            else:
+                if model:
+                    created_models.append(model)
 
         if created_models:
 

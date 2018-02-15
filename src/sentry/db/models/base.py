@@ -57,6 +57,13 @@ class BaseModel(models.Model):
         d.pop('_Model__data', None)
         return d
 
+    def __hash__(self):
+        # Django decided that it shouldnt let us hash objects even though they have
+        # memory addresses. We need that behavior, so let's revert.
+        if self.pk:
+            return models.Model.__hash__(self)
+        return id(self)
+
     def __reduce__(self):
         (model_unpickle, stuff, _) = super(BaseModel, self).__reduce__()
         return (model_unpickle, stuff, self.__getstate__())

@@ -10,6 +10,7 @@ import inspect
 from django.db import models
 from django.db.models.loading import cache
 from django.core.exceptions import ImproperlyConfigured
+from uuid import uuid4
 
 from south.db import db
 from south.utils import ask_for_it_by_name, datetime_utils
@@ -338,10 +339,11 @@ class _FakeORM(object):
             app_module = models.get_app(app)
             more_kwds['__module__'] = app_module.__name__
         except ImproperlyConfigured:
-            # The app this belonged to has vanished, but thankfully we can still
+            # the app this belonged to has vanished, but thankfully we can still
             # make a mock model, so ignore the error.
             more_kwds['__module__'] = '_south_mock'
 
+        more_kwds['__module__'] = '_south_mock_{}'.format(uuid4().hex)
         more_kwds['Meta'] = meta
 
         # Make our model
@@ -352,6 +354,15 @@ class _FakeORM(object):
             tuple(bases),
             fields,
         )
+        # except RuntimeError:
+        #     # Django 1.7+ throws a runtime error in some situations due to model validation:
+        #     # >>> RuntimeError: Conflicting 'user' models in application 'sentry': <class 'sentry.models.user.User'> and <class 'sentry.models.User'>.
+        #     more_kwds['__module__'] = '_south_mock'
+        #     model = type(
+        #         str(name),
+        #         tuple(bases),
+        #         fields,
+        #     )
 
         # If this is a stub model, change Objects to a whiny class
         if stub:
